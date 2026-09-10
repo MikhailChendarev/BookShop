@@ -7,6 +7,11 @@ pipeline {
                 git branch: 'main', url: 'https://github.com/MikhailChendarev/BookShop.git'
             }
         }
+        stage('Prepare mvnw') {
+            steps {
+                sh 'chmod +x mvnw'
+            }
+        }
         stage('Build') {
             steps {
                 sh './mvnw clean package -DskipTests'
