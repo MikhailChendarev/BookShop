@@ -9,12 +9,12 @@ pipeline {
         }
         stage('Build') {
             steps {
-                sh './mvnv clean package -DskipTests'
+                sh './mvnw clean package -DskipTests'
             }
         }
         stage('Test') {
             steps {
-                sh './mvnv test'
+                sh './mvnw test'
             }
         }
         stage('Archive') {
