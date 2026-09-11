@@ -10,6 +10,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
+import java.sql.ResultSet;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -20,43 +21,53 @@ import static org.mockito.Mockito.*;
 class BookServiceTest {
 
     @Mock
-    private JdbcTemplate jdbcTemplate;
+    JdbcTemplate jdbcTemplate;
 
     @InjectMocks
-    private BookService bookService;
+    BookService bookService;
 
     @Test
-    void getBooksData_returnsMappedBooks() {
-        // --- Мок ответа SELECT * FROM books ---
-        Book book = new Book();
-        book.setId(1);
-        book.setAuthor("Fyodor Dostoevsky");
-        book.setTitle("Idiot");
-        book.setPriceOld(350);
-        book.setPrice(400);
+    void getBooksData_returnsMappedBooks() throws Exception {
 
+        // --- Мокаем SELECT * FROM books ---
         when(jdbcTemplate.query(eq("SELECT * FROM books"), any(RowMapper.class)))
-                .thenReturn(List.of(book));
+                .thenAnswer(invocation -> {
+                    RowMapper<Book> mapper = invocation.getArgument(1);
 
-        // --- Мок ответа SELECT * FROM authors WHERE id = X ---
-        Author author = new Author();
-        author.setId(1L);
-        author.setFirstName("Fyodor");
-        author.setLastName("Dostoevsky");
+                    ResultSet rs = mock(ResultSet.class);
+                    when(rs.getInt("id")).thenReturn(1);
+                    when(rs.getInt("author_id")).thenReturn(1);
+                    when(rs.getString("title")).thenReturn("Idiot");
+                    when(rs.getInt("price_old")).thenReturn(350);
+                    when(rs.getInt("price")).thenReturn(400);
 
+                    return List.of(mapper.mapRow(rs, 0));
+                });
+
+        // --- Мокаем SELECT * FROM authors WHERE id = 1 ---
         when(jdbcTemplate.query(startsWith("select * from authors"), any(RowMapper.class)))
-                .thenReturn(List.of(author));
+                .thenAnswer(invocation -> {
+                    RowMapper<Author> mapper = invocation.getArgument(1);
+
+                    ResultSet rs = mock(ResultSet.class);
+                    when(rs.getInt("id")).thenReturn(1);
+                    when(rs.getString("first_name")).thenReturn("Fyodor");
+                    when(rs.getString("last_name")).thenReturn("Dostoevsky");
+
+                    return List.of(mapper.mapRow(rs, 0));
+                });
 
         // --- Вызываем сервис ---
-        List<Book> result = bookService.getBooksData();
+        List<Book> books = bookService.getBooksData();
 
         // --- Проверяем ---
-        assertEquals(1, result.size());
-        assertEquals("Idiot", result.get(0).getTitle());
-        assertEquals("Fyodor Dostoevsky", result.get(0).getAuthor());
+        assertEquals(1, books.size());
+        assertEquals("Idiot", books.get(0).getTitle());
+        assertEquals("Fyodor Dostoevsky", books.get(0).getAuthor());
 
-        // --- Проверяем вызовы JdbcTemplate ---
-        verify(jdbcTemplate, times(1)).query(eq("SELECT * FROM books"), any(RowMapper.class));
-        verify(jdbcTemplate, times(1)).query(startsWith("select * from authors"), any(RowMapper.class));
+        // --- Проверяем вызовы ---
+        verify(jdbcTemplate).query(eq("SELECT * FROM books"), any(RowMapper.class));
+        verify(jdbcTemplate).query(startsWith("select * from authors"), any(RowMapper.class));
     }
 }
+
