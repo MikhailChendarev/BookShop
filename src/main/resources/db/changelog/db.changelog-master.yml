@@ -1,0 +1,73 @@
+databaseChangeLog:
+  - changeSet:
+      id: create-authors
+      author: mikhail
+      changes:
+        - createTable:
+            tableName: authors
+            columns:
+              - column:
+                  name: id
+                  type: int
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: first_name
+                  type: varchar(255)
+              - column:
+                  name: last_name
+                  type: varchar(255)
+
+  - changeSet:
+      id: create-books
+      author: mikhail
+      changes:
+        - createTable:
+            tableName: books
+            columns:
+              - column:
+                  name: id
+                  type: int
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: author_id
+                  type: int
+              - column:
+                  name: title
+                  type: varchar(255)
+              - column:
+                  name: price_old
+                  type: int
+              - column:
+                  name: price
+                  type: int
+
+  - changeSet:
+      id: add-fk-books-authors
+      author: mikhail
+      changes:
+        - addForeignKeyConstraint:
+            baseTableName: books
+            baseColumnNames: author_id
+            referencedTableName: authors
+            referencedColumnNames: id
+            constraintName: fk_books_authors
+            onDelete: CASCADE
+            onUpdate: CASCADE
+
+  - changeSet:
+      id: insert-authors
+      author: mikhail
+      changes:
+        - sqlFile:
+            path: db/data/authors.sql
+            relativeToChangelogFile: true
+
+  - changeSet:
+      id: insert-books
+      author: mikhail
+      changes:
+        - sqlFile:
+            path: db/data/books.sql
+            relativeToChangelogFile: true
